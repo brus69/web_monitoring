@@ -1,0 +1,25 @@
+# Binary files
+webmon
+webmon.exe
+*.exe
+
+# State files (may contain private data)
+state.json
+
+# Go
+vendor/
+go.sum
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

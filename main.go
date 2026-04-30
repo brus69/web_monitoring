@@ -1,0 +1,157 @@
+package main
+
+import (
+	"flag"
+	"fmt"
+	"log"
+	"os"
+	"time"
+)
+
+func main() {
+	file := flag.String("file", "", "Input file (.csv, .txt, sitemap.xml)")
+	interval := flag.Int("interval", 14400, "Check interval in seconds")
+	concurrency := flag.Int("concurrency", 10, "Max concurrent requests")
+	stateFile := flag.String("state", "state.json", "State file path")
+	flag.Parse()
+
+	if *file == "" {
+		fmt.Println("Usage: webmon --file urls.txt --interval 4 --concurrency 10")
+		os.Exit(1)
+	}
+
+	urls, err := ParseInputFile(*file)
+	if err != nil {
+		log.Fatalf("Failed to parse input: %v", err)
+	}
+	fmt.Printf("Loaded %d URLs\n", len(urls))
+
+	state, err := LoadState(*stateFile)
+	if err != nil {
+		log.Fatalf("Failed to load state: %v", err)
+	}
+
+	ticker := time.NewTicker(time.Duration(*interval) * time.Second)
+	defer ticker.Stop()
+
+	for {
+		runCheck(urls, state, *concurrency)
+		if err := SaveState(*stateFile, state); err != nil {
+			log.Printf("Failed to save state: %v", err)
+		}
+		<-ticker.C
+	}
+}
+
+func runCheck(urls []string, state *State, concurrency int) {
+	sem := make(chan struct{}, concurrency)
+	changed := 0
+	unchanged := 0
+
+	for _, url := range urls {
+		sem <- struct{}{}
+		go func(u string) {
+			defer func() { <-sem }()
+
+			statusCode, content, err := FetchURL(u)
+			if err != nil {
+				log.Printf("[%s] FETCH ERROR: %v", u, err)
+				return
+			}
+
+			title, desc, textContent := ExtractContent(string(content))
+			hash := ComputeHash(content)
+			oldState := findPage(state, u)
+			now := time.Now().Format("2006-01-02 15:04:05")
+			status := "unchanged"
+
+			if oldState == nil {
+				status = "new"
+				changed++
+				fmt.Printf("\n%s | %d | NEW PAGE\n", now, statusCode)
+				fmt.Printf("  Title: %s\n", title)
+				fmt.Printf("  Desc: %s\n", desc)
+				fmt.Printf("  Text: %s...\n", truncate(textContent, 100))
+			} else {
+				hasChanges := false
+
+				if oldState.Title != title {
+					hasChanges = true
+					diff := GenerateDiff(oldState.Title, title)
+					fmt.Printf("\n%s | %d | TITLE CHANGED\n", now, statusCode)
+					fmt.Printf("  Old: %s\n", oldState.Title)
+					fmt.Printf("  New: %s\n", title)
+					fmt.Printf("  Diff: %s\n", diff)
+				}
+				if oldState.Description != desc {
+					hasChanges = true
+					diff := GenerateDiff(oldState.Description, desc)
+					fmt.Printf("\n%s | %d | DESCRIPTION CHANGED\n", now, statusCode)
+					fmt.Printf("  Old: %s\n", oldState.Description)
+					fmt.Printf("  New: %s\n", desc)
+					fmt.Printf("  Diff: %s\n", diff)
+				}
+				if oldState.TextContent != textContent {
+					hasChanges = true
+					diff := GenerateDiff(oldState.TextContent, textContent)
+					fmt.Printf("\n%s | %d | TEXT CHANGED\n", now, statusCode)
+					fmt.Printf("  Diff (first 200 chars): %s...\n", truncate(diff, 200))
+				}
+
+				if hasChanges {
+					status = "changed"
+					changed++
+				} else {
+					unchanged++
+				}
+			}
+
+			updatePage(state, u, hash, status, title, desc, textContent)
+		}(url)
+	}
+
+	for i := 0; i < concurrency; i++ {
+		sem <- struct{}{}
+	}
+
+	fmt.Printf("\nCheck complete: %d changed, %d unchanged\n", changed, unchanged)
+}
+
+func truncate(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n]
+}
+
+func findPage(state *State, url string) *PageState {
+	for i := range state.Pages {
+		if state.Pages[i].URL == url {
+			return &state.Pages[i]
+		}
+	}
+	return nil
+}
+
+func updatePage(state *State, url, hash, status, title, description, textContent string) {
+	for i := range state.Pages {
+		if state.Pages[i].URL == url {
+			state.Pages[i].ContentHash = hash
+			state.Pages[i].LastChecked = time.Now()
+			state.Pages[i].Status = status
+			state.Pages[i].Title = title
+			state.Pages[i].Description = description
+			state.Pages[i].TextContent = textContent
+			return
+		}
+	}
+	state.Pages = append(state.Pages, PageState{
+		URL:         url,
+		ContentHash: hash,
+		LastChecked: time.Now(),
+		Status:      status,
+		Title:       title,
+		Description: description,
+		TextContent: textContent,
+	})
+}
