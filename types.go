@@ -15,3 +15,29 @@ type PageState struct {
 type State struct {
 	Pages []PageState `json:"pages"`
 }
+
+type Project struct {
+	ID           string    `json:"id"`
+	Name         string    `json:"name"`
+	URLs         []string  `json:"urls"`
+	TrackTitle   bool      `json:"track_title"`
+	TrackDesc    bool      `json:"track_desc"`
+	TrackContent bool      `json:"track_content"`
+	Interval     int       `json:"interval"` // в минутах
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type ProjectState struct {
+	Projects []Project         `json:"projects"`
+	Results  map[string]*State `json:"results"` // projectID -> State
+}
+
+type LoginRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type LoginResponse struct {
+	Token string `json:"token"`
+}

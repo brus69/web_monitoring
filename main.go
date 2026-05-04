@@ -9,14 +9,21 @@ import (
 )
 
 func main() {
+	mode := flag.String("mode", "cli", "Mode: cli or server")
 	file := flag.String("file", "", "Input file (.csv, .txt, sitemap.xml)")
 	interval := flag.Int("interval", 14400, "Check interval in seconds")
 	concurrency := flag.Int("concurrency", 10, "Max concurrent requests")
 	stateFile := flag.String("state", "state.json", "State file path")
 	flag.Parse()
 
+	if *mode == "server" {
+		startAPIServer()
+		return
+	}
+
 	if *file == "" {
 		fmt.Println("Usage: webmon --file urls.txt --interval 4 --concurrency 10")
+		fmt.Println("Or: webmon --mode server (for API server)")
 		os.Exit(1)
 	}
 
