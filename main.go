@@ -85,24 +85,30 @@ func runCheck(urls []string, state *State, concurrency int) {
 				if oldState.Title != title {
 					hasChanges = true
 					diff := GenerateDiff(oldState.Title, title)
+					htmlDiff := GenerateHTMLDiff(oldState.Title, title)
 					fmt.Printf("\n%s | %d | TITLE CHANGED\n", now, statusCode)
 					fmt.Printf("  Old: %s\n", oldState.Title)
 					fmt.Printf("  New: %s\n", title)
 					fmt.Printf("  Diff: %s\n", diff)
+					addChange(oldState, "title", oldState.Title, title, htmlDiff)
 				}
 				if oldState.Description != desc {
 					hasChanges = true
 					diff := GenerateDiff(oldState.Description, desc)
+					htmlDiff := GenerateHTMLDiff(oldState.Description, desc)
 					fmt.Printf("\n%s | %d | DESCRIPTION CHANGED\n", now, statusCode)
 					fmt.Printf("  Old: %s\n", oldState.Description)
 					fmt.Printf("  New: %s\n", desc)
 					fmt.Printf("  Diff: %s\n", diff)
+					addChange(oldState, "description", oldState.Description, desc, htmlDiff)
 				}
 				if oldState.TextContent != textContent {
 					hasChanges = true
 					diff := GenerateDiff(oldState.TextContent, textContent)
+					htmlDiff := GenerateHTMLDiff(oldState.TextContent, textContent)
 					fmt.Printf("\n%s | %d | TEXT CHANGED\n", now, statusCode)
 					fmt.Printf("  Diff (first 200 chars): %s...\n", truncate(diff, 200))
+					addChange(oldState, "text", oldState.TextContent, textContent, htmlDiff)
 				}
 
 				if hasChanges {
@@ -161,4 +167,19 @@ func updatePage(state *State, url, hash, status, title, description, textContent
 		Description: description,
 		TextContent: textContent,
 	})
+}
+
+func addChange(page *PageState, field, oldVal, newVal, htmlDiff string) {
+	record := ChangeRecord{
+		Timestamp: time.Now(),
+		Field:     field,
+		OldValue:  oldVal,
+		NewValue:  newVal,
+		Diff:      htmlDiff,
+	}
+	page.Changes = append(page.Changes, record)
+	// Храним только последние 50 изменений
+	if len(page.Changes) > 50 {
+		page.Changes = page.Changes[len(page.Changes)-50:]
+	}
 }

@@ -19,6 +19,14 @@ export interface LoginResponse {
   token: string;
 }
 
+export interface ChangeRecord {
+  timestamp: string;
+  field: string;
+  old_value: string;
+  new_value: string;
+  diff: string;
+}
+
 export interface PageState {
   url: string;
   content_hash?: string;
@@ -27,6 +35,7 @@ export interface PageState {
   title?: string;
   description?: string;
   text_content?: string;
+  changes?: ChangeRecord[];
 }
 
 export interface State {

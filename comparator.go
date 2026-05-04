@@ -85,3 +85,64 @@ func GenerateDiff(oldText, newText string) string {
 
 	return strings.Join(result, " ")
 }
+
+// GenerateHTMLDiff сравнивает два текста и возвращает HTML с подсветкой изменений
+// <del> - удалено, <ins> - добавлено
+func GenerateHTMLDiff(oldText, newText string) string {
+	oldWords := strings.Fields(oldText)
+	newWords := strings.Fields(newText)
+
+	var result []string
+	lenOld := len(oldWords)
+	lenNew := len(newWords)
+
+	i, j := 0, 0
+	for i < lenOld || j < lenNew {
+		if i < lenOld && j < lenNew && oldWords[i] == newWords[j] {
+			result = append(result, oldWords[i])
+			i++
+			j++
+		} else {
+			// Ищем удаленные
+			found := false
+			if i < lenOld {
+				for k := j; k < lenNew; k++ {
+					if oldWords[i] == newWords[k] {
+						found = true
+						break
+					}
+				}
+			}
+			if !found && i < lenOld {
+				result = append(result, fmt.Sprintf("<del>%s</del>", oldWords[i]))
+				i++
+				continue
+			}
+
+			// Ищем добавленные
+			if j < lenNew {
+				foundOld := false
+				for k := i; k < lenOld; k++ {
+					if newWords[j] == oldWords[k] {
+						foundOld = true
+						break
+					}
+				}
+				if !foundOld {
+					result = append(result, fmt.Sprintf("<ins>%s</ins>", newWords[j]))
+					j++
+					continue
+				}
+			}
+
+			if i < lenOld {
+				i++
+			}
+			if j < lenNew {
+				j++
+			}
+		}
+	}
+
+	return strings.Join(result, " ")
+}
