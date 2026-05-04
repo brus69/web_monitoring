@@ -67,3 +67,18 @@ export const getResults = async (token: string, projectId: string): Promise<Stat
   if (!response.ok) throw new Error('Failed to fetch results');
   return response.json();
 };
+
+export const parseSitemap = async (token: string, sitemapURL: string): Promise<string[]> => {
+  const response = await fetch(`${API_URL}/parse-sitemap`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ url: sitemapURL }),
+  });
+
+  if (!response.ok) throw new Error('Failed to parse sitemap');
+  const data = await response.json();
+  return data.urls;
+};

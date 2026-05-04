@@ -70,12 +70,12 @@ func runCheck(urls []string, state *State, concurrency int) {
 			hash := ComputeHash(content)
 			oldState := findPage(state, u)
 			now := time.Now().Format("2006-01-02 15:04:05")
-			status := "unchanged"
+			status := "без изменений"
 
 			if oldState == nil {
-				status = "new"
+				status = "новая"
 				changed++
-				fmt.Printf("\n%s | %d | NEW PAGE\n", now, statusCode)
+				fmt.Printf("\n%s | %d | НОВАЯ СТРАНИЦА\n", now, statusCode)
 				fmt.Printf("  Title: %s\n", title)
 				fmt.Printf("  Desc: %s\n", desc)
 				fmt.Printf("  Text: %s...\n", truncate(textContent, 100))
@@ -86,7 +86,7 @@ func runCheck(urls []string, state *State, concurrency int) {
 					hasChanges = true
 					diff := GenerateDiff(oldState.Title, title)
 					htmlDiff := GenerateHTMLDiff(oldState.Title, title)
-					fmt.Printf("\n%s | %d | TITLE CHANGED\n", now, statusCode)
+					fmt.Printf("\n%s | %d | ИЗМЕНЕН ЗАГОЛОВОК\n", now, statusCode)
 					fmt.Printf("  Old: %s\n", oldState.Title)
 					fmt.Printf("  New: %s\n", title)
 					fmt.Printf("  Diff: %s\n", diff)
@@ -96,7 +96,7 @@ func runCheck(urls []string, state *State, concurrency int) {
 					hasChanges = true
 					diff := GenerateDiff(oldState.Description, desc)
 					htmlDiff := GenerateHTMLDiff(oldState.Description, desc)
-					fmt.Printf("\n%s | %d | DESCRIPTION CHANGED\n", now, statusCode)
+					fmt.Printf("\n%s | %d | ИЗМЕНЕНО ОПИСАНИЕ\n", now, statusCode)
 					fmt.Printf("  Old: %s\n", oldState.Description)
 					fmt.Printf("  New: %s\n", desc)
 					fmt.Printf("  Diff: %s\n", diff)
@@ -106,13 +106,13 @@ func runCheck(urls []string, state *State, concurrency int) {
 					hasChanges = true
 					diff := GenerateDiff(oldState.TextContent, textContent)
 					htmlDiff := GenerateHTMLDiff(oldState.TextContent, textContent)
-					fmt.Printf("\n%s | %d | TEXT CHANGED\n", now, statusCode)
+					fmt.Printf("\n%s | %d | ИЗМЕНЕН ТЕКСТ\n", now, statusCode)
 					fmt.Printf("  Diff (first 200 chars): %s...\n", truncate(diff, 200))
 					addChange(oldState, "text", oldState.TextContent, textContent, htmlDiff)
 				}
 
 				if hasChanges {
-					status = "changed"
+					status = "изменена"
 					changed++
 				} else {
 					unchanged++
@@ -127,7 +127,7 @@ func runCheck(urls []string, state *State, concurrency int) {
 		sem <- struct{}{}
 	}
 
-	fmt.Printf("\nCheck complete: %d changed, %d unchanged\n", changed, unchanged)
+	fmt.Printf("\nПроверка завершена: %d изменено, %d без изменений\n", changed, unchanged)
 }
 
 func truncate(s string, n int) string {

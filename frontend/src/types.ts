@@ -6,6 +6,7 @@ export interface Project {
   track_desc: boolean;
   track_content: boolean;
   interval: number;
+  concurrency: number;
   created_at: string;
   updated_at: string;
 }

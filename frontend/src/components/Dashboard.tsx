@@ -89,7 +89,7 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <div>
                 <h3>{project.name}</h3>
-                <p>URL: {project.urls.length} | Интервал: {project.interval} мин</p>
+                <p>URL: {project.urls.length} | Интервал: {project.interval} мин | Потоков: {project.concurrency || 10}</p>
               </div>
               <div>
                 <button onClick={() => handleViewResults(project)} style={{ marginRight: 5 }}>Результаты</button>

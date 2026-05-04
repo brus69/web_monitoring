@@ -3,8 +3,11 @@ package main
 import (
 	"encoding/csv"
 	"encoding/xml"
+	"fmt"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 func ParseInputFile(filename string) ([]string, error) {
@@ -75,6 +78,37 @@ func parseSitemap(filename string) ([]string, error) {
 	}
 
 	if err := xml.Unmarshal(data, &sitemap); err != nil {
+		return nil, err
+	}
+
+	urls := []string{}
+	for _, u := range sitemap.URLs {
+		if u.Loc != "" {
+			urls = append(urls, u.Loc)
+		}
+	}
+	return urls, nil
+}
+
+func parseSitemapFromURL(sitemapURL string) ([]string, error) {
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Get(sitemapURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to fetch sitemap: %s", resp.Status)
+	}
+
+	var sitemap struct {
+		URLs []struct {
+			Loc string `xml:"loc"`
+		} `xml:"url"`
+	}
+
+	if err := xml.NewDecoder(resp.Body).Decode(&sitemap); err != nil {
 		return nil, err
 	}
 

@@ -180,6 +180,35 @@ func handleGetResults(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(State{Pages: []PageState{}})
 }
 
+func handleParseSitemap(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		URL string `json:"url"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	if req.URL == "" {
+		http.Error(w, "URL is required", http.StatusBadRequest)
+		return
+	}
+
+	urls, err := parseSitemapFromURL(req.URL)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to parse sitemap: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string][]string{"urls": urls})
+}
+
 func runProjectCheck(project Project, state *State, concurrency int) {
 	runCheck(project.URLs, state, concurrency)
 }
@@ -196,7 +225,11 @@ func startProjectMonitoring(project Project) {
 			if results == nil {
 				results = &State{Pages: []PageState{}}
 			}
-			runProjectCheck(project, results, 10)
+			concurrency := project.Concurrency
+			if concurrency <= 0 {
+				concurrency = 10 // default
+			}
+			runProjectCheck(project, results, concurrency)
 			state.Results[project.ID] = results
 			SaveProjectState(state)
 			<-ticker.C
@@ -213,6 +246,7 @@ func startAPIServer() {
 	http.HandleFunc("/api/login", handleLogin)
 	http.HandleFunc("/api/projects", authMiddleware(handleGetProjects))
 	http.HandleFunc("/api/projects/create", authMiddleware(handleCreateProject))
+	http.HandleFunc("/api/parse-sitemap", authMiddleware(handleParseSitemap))
 	http.HandleFunc("/api/projects/", authMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, "/results") {
 			handleGetResults(w, r)

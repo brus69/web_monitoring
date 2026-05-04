@@ -32,7 +32,8 @@ type Project struct {
 	TrackTitle   bool      `json:"track_title"`
 	TrackDesc    bool      `json:"track_desc"`
 	TrackContent bool      `json:"track_content"`
-	Interval     int       `json:"interval"` // в минутах
+	Interval     int       `json:"interval"`    // в минутах
+	Concurrency  int       `json:"concurrency"` // максимум потоков
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }

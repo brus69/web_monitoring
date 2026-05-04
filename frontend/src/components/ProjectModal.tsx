@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Project } from '../types';
+import { parseSitemap } from '../api';
 
 interface ProjectModalProps {
   project: Project | null;
@@ -10,10 +11,13 @@ interface ProjectModalProps {
 const ProjectModal: React.FC<ProjectModalProps> = ({ project, onSave, onClose }) => {
   const [name, setName] = useState('');
   const [urls, setUrls] = useState('');
+  const [sitemapUrl, setSitemapUrl] = useState('');
+  const [loadingSitemap, setLoadingSitemap] = useState(false);
   const [trackTitle, setTrackTitle] = useState(true);
   const [trackDesc, setTrackDesc] = useState(true);
   const [trackContent, setTrackContent] = useState(true);
   const [interval, setInterval] = useState(60);
+  const [concurrency, setConcurrency] = useState(10);
 
   useEffect(() => {
     if (project) {
@@ -23,6 +27,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onSave, onClose })
       setTrackDesc(project.track_desc);
       setTrackContent(project.track_content);
       setInterval(project.interval);
+      setConcurrency(project.concurrency || 10);
     }
   }, [project]);
 
@@ -33,9 +38,44 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onSave, onClose })
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = ev.target?.result as string;
-      setUrls(text);
+
+      if (file.name.endsWith('.xml') || text.includes('<urlset')) {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(text, 'text/xml');
+        const locElements = xmlDoc.getElementsByTagName('loc');
+        const extractedUrls = Array.from(locElements)
+          .map(el => el.textContent?.trim())
+          .filter((url): url is string => !!url);
+        setUrls(prev => {
+          const newUrls = extractedUrls.join('\n');
+          return prev ? `${prev}\n${newUrls}` : newUrls;
+        });
+      } else {
+        setUrls(prev => prev ? `${prev}\n${text}` : text);
+      }
     };
     reader.readAsText(file);
+  };
+
+  const handleSitemapUrlLoad = async () => {
+    if (!sitemapUrl.trim()) return;
+
+    setLoadingSitemap(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No token');
+
+      const extractedUrls = await parseSitemap(token, sitemapUrl.trim());
+      setUrls(prev => {
+        const newUrls = extractedUrls.join('\n');
+        return prev ? `${prev}\n${newUrls}` : newUrls;
+      });
+      setSitemapUrl('');
+    } catch (err) {
+      alert('Ошибка загрузки sitemap: ' + (err as Error).message);
+    } finally {
+      setLoadingSitemap(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -48,6 +88,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onSave, onClose })
       track_desc: trackDesc,
       track_content: trackContent,
       interval,
+      concurrency,
     });
   };
 
@@ -69,6 +110,25 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onSave, onClose })
             <label>URL (по одному на строку или загрузить файл):</label><br />
             <textarea value={urls} onChange={(e) => setUrls(e.target.value)} rows={10} style={{ width: '100%', padding: 8 }} />
             <input type="file" onChange={handleFileUpload} accept=".txt,.csv,.xml" style={{ marginTop: 5 }} />
+            <div style={{ marginTop: 10 }}>
+              <label>Или введите URL sitemap.xml:</label><br />
+              <div style={{ display: 'flex', gap: 5, marginTop: 5 }}>
+                <input
+                  type="text"
+                  value={sitemapUrl}
+                  onChange={(e) => setSitemapUrl(e.target.value)}
+                  placeholder="https://example.com/sitemap.xml"
+                  style={{ flex: 1, padding: 8 }}
+                />
+                <button
+                  type="button"
+                  onClick={handleSitemapUrlLoad}
+                  disabled={loadingSitemap || !sitemapUrl.trim()}
+                >
+                  {loadingSitemap ? 'Загрузка...' : 'Загрузить'}
+                </button>
+              </div>
+            </div>
           </div>
 
           <div style={{ marginBottom: 10 }}>
@@ -81,6 +141,11 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onSave, onClose })
           <div style={{ marginBottom: 10 }}>
             <label>Интервал (минуты):</label><br />
             <input type="number" value={interval} onChange={(e) => setInterval(Number(e.target.value))} min={1} style={{ padding: 8 }} />
+          </div>
+
+          <div style={{ marginBottom: 10 }}>
+            <label>Максимум потоков:</label><br />
+            <input type="number" value={concurrency} onChange={(e) => setConcurrency(Number(e.target.value))} min={1} max={50} style={{ padding: 8 }} />
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>

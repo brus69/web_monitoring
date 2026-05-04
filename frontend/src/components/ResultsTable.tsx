@@ -59,7 +59,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ pages }) => {
                 <td style={{ border: '1px solid #ddd', padding: 8 }}>{p.url}</td>
                 <td style={{ border: '1px solid #ddd', padding: 8 }}>
                   <span style={{
-                    color: p.status === 'changed' ? 'red' : p.status === 'new' ? 'green' : 'gray'
+                    color: p.status === 'изменена' ? 'red' : p.status === 'новая' ? 'green' : 'gray'
                   }}>
                     {p.status}
                   </span>
