@@ -58,34 +58,34 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onSave, onClose })
       alignItems: 'center', justifyContent: 'center'
     }}>
       <div style={{ background: 'white', padding: 30, borderRadius: 8, minWidth: 500, maxHeight: '80vh', overflow: 'auto' }}>
-        <h2>{project ? 'Edit Project' : 'Create Project'}</h2>
+        <h2>{project ? 'Редактировать проект' : 'Создать проект'}</h2>
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 10 }}>
-            <label>Name:</label><br />
+            <label>Название:</label><br />
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} required style={{ width: '100%', padding: 8 }} />
           </div>
 
           <div style={{ marginBottom: 10 }}>
-            <label>URLs (one per line or upload file):</label><br />
+            <label>URL (по одному на строку или загрузить файл):</label><br />
             <textarea value={urls} onChange={(e) => setUrls(e.target.value)} rows={10} style={{ width: '100%', padding: 8 }} />
             <input type="file" onChange={handleFileUpload} accept=".txt,.csv,.xml" style={{ marginTop: 5 }} />
           </div>
 
           <div style={{ marginBottom: 10 }}>
-            <label>Track:</label><br />
-            <label><input type="checkbox" checked={trackTitle} onChange={(e) => setTrackTitle(e.target.checked)} /> Title</label>
-            <label style={{ marginLeft: 10 }}><input type="checkbox" checked={trackDesc} onChange={(e) => setTrackDesc(e.target.checked)} /> Description</label>
-            <label style={{ marginLeft: 10 }}><input type="checkbox" checked={trackContent} onChange={(e) => setTrackContent(e.target.checked)} /> Content</label>
+            <label>Отслеживать:</label><br />
+            <label><input type="checkbox" checked={trackTitle} onChange={(e) => setTrackTitle(e.target.checked)} /> Заголовок</label>
+            <label style={{ marginLeft: 10 }}><input type="checkbox" checked={trackDesc} onChange={(e) => setTrackDesc(e.target.checked)} /> Описание</label>
+            <label style={{ marginLeft: 10 }}><input type="checkbox" checked={trackContent} onChange={(e) => setTrackContent(e.target.checked)} /> Контент</label>
           </div>
 
           <div style={{ marginBottom: 10 }}>
-            <label>Interval (minutes):</label><br />
+            <label>Интервал (минуты):</label><br />
             <input type="number" value={interval} onChange={(e) => setInterval(Number(e.target.value))} min={1} style={{ padding: 8 }} />
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-            <button type="button" onClick={onClose}>Cancel</button>
-            <button type="submit">{project ? 'Update' : 'Create'}</button>
+            <button type="button" onClick={onClose}>Отмена</button>
+            <button type="submit">{project ? 'Обновить' : 'Создать'}</button>
           </div>
         </form>
       </div>

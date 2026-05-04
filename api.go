@@ -228,7 +228,7 @@ func startAPIServer() {
 		}
 	}))
 
-	fs := http.FileServer(http.Dir("./frontend/build"))
+	fs := http.FileServer(http.Dir("/home/andrey/Dev/web_monitoring/frontend/build"))
 	http.Handle("/", fs)
 
 	log.Println("Server starting on :8080")

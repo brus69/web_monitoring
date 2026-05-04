@@ -20,9 +20,9 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ pages }) => {
 
   const getFieldLabel = (field: string) => {
     switch(field) {
-      case 'title': return 'Title';
-      case 'description': return 'Description';
-      case 'text': return 'Content';
+      case 'title': return 'Заголовок';
+      case 'description': return 'Описание';
+      case 'text': return 'Контент';
       default: return field;
     }
   };
@@ -42,10 +42,10 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ pages }) => {
         <thead>
           <tr style={{ background: '#f5f5f5' }}>
             <th style={{ border: '1px solid #ddd', padding: 8, textAlign: 'left' }}>URL</th>
-            <th style={{ border: '1px solid #ddd', padding: 8, textAlign: 'left' }}>Status</th>
-            <th style={{ border: '1px solid #ddd', padding: 8, textAlign: 'left' }}>Title</th>
-            <th style={{ border: '1px solid #ddd', padding: 8, textAlign: 'left' }}>Last Checked</th>
-            <th style={{ border: '1px solid #ddd', padding: 8, textAlign: 'left' }}>Changes</th>
+            <th style={{ border: '1px solid #ddd', padding: 8, textAlign: 'left' }}>Статус</th>
+            <th style={{ border: '1px solid #ddd', padding: 8, textAlign: 'left' }}>Заголовок</th>
+            <th style={{ border: '1px solid #ddd', padding: 8, textAlign: 'left' }}>Последняя проверка</th>
+            <th style={{ border: '1px solid #ddd', padding: 8, textAlign: 'left' }}>Изменения</th>
           </tr>
         </thead>
         <tbody>
@@ -73,7 +73,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ pages }) => {
               {expandedUrl === p.url && p.changes && (
                 <tr>
                   <td colSpan={5} style={{ border: '1px solid #ddd', padding: 8, background: '#fafafa' }}>
-                    <h4>Change History</h4>
+                    <h4>История изменений</h4>
                     {p.changes.map((change: ChangeRecord, idx: number) => {
                       const colors = getFieldColor(change.field);
                       return (
@@ -93,15 +93,15 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ pages }) => {
                             <span style={{ color: '#666', fontSize: '12px' }}>{change.timestamp}</span>
                           </div>
                           <div style={{ marginBottom: 5 }}>
-                            <span style={{ color: '#666' }}>Old: </span>
+                            <span style={{ color: '#666' }}>Старое: </span>
                             <span>{change.old_value && change.old_value.length > 100 ? change.old_value.substring(0, 100) + '...' : change.old_value}</span>
                           </div>
                           <div style={{ marginBottom: 5 }}>
-                            <span style={{ color: '#666' }}>New: </span>
+                            <span style={{ color: '#666' }}>Новое: </span>
                             <span>{change.new_value && change.new_value.length > 100 ? change.new_value.substring(0, 100) + '...' : change.new_value}</span>
                           </div>
                           <div>
-                            <span style={{ color: '#666' }}>Diff: </span>
+                            <span style={{ color: '#666' }}>Изменения: </span>
                             <span dangerouslySetInnerHTML={{ __html: change.diff }} />
                           </div>
                         </div>
@@ -118,18 +118,18 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ pages }) => {
       {totalPages > 1 && (
         <div style={{ marginTop: 20, display: 'flex', justifyContent: 'center', gap: 10 }}>
           <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
-            Previous
+            Назад
           </button>
-          <span>Page {page} of {totalPages}</span>
+          <span>Страница {page} из {totalPages}</span>
           <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
-            Next
+            Вперёд
           </button>
         </div>
       )}
 
       {pages.length === 0 && (
         <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>
-          No results yet. Monitoring is in progress...
+          Результатов пока нет. Мониторинг выполняется...
         </div>
       )}
     </div>

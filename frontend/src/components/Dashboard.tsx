@@ -25,7 +25,7 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout }) => {
       const data = await getProjects(token);
       setProjects(data);
     } catch (err) {
-      console.error('Failed to load projects', err);
+      console.error('Не удалось загрузить проекты', err);
     }
   };
 
@@ -35,7 +35,7 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout }) => {
       setShowModal(false);
       loadProjects();
     } catch (err) {
-      console.error('Failed to create project', err);
+      console.error('Не удалось создать проект', err);
     }
   };
 
@@ -47,17 +47,17 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout }) => {
       setShowModal(false);
       loadProjects();
     } catch (err) {
-      console.error('Failed to update project', err);
+      console.error('Не удалось обновить проект', err);
     }
   };
 
   const handleDeleteProject = async (id: string) => {
-    if (!window.confirm('Delete this project?')) return;
+    if (!window.confirm('Удалить этот проект?')) return;
     try {
       await deleteProject(token, id);
       loadProjects();
     } catch (err) {
-      console.error('Failed to delete project', err);
+      console.error('Не удалось удалить проект', err);
     }
   };
 
@@ -67,19 +67,19 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout }) => {
       setResults(data.pages);
       setSelectedProject(project);
     } catch (err) {
-      console.error('Failed to load results', err);
+      console.error('Не удалось загрузить результаты', err);
     }
   };
 
   return (
     <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-        <h1>Web Monitor - Dashboard</h1>
+        <h1>Web Monitor - Личный кабинет</h1>
         <div>
           <button onClick={() => { setEditingProject(null); setShowModal(true); }} style={{ marginRight: 10 }}>
-            Create Project
+            Создать проект
           </button>
-          <button onClick={onLogout}>Logout</button>
+          <button onClick={onLogout}>Выйти</button>
         </div>
       </div>
 
@@ -89,12 +89,12 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <div>
                 <h3>{project.name}</h3>
-                <p>URLs: {project.urls.length} | Interval: {project.interval} min</p>
+                <p>URL: {project.urls.length} | Интервал: {project.interval} мин</p>
               </div>
               <div>
-                <button onClick={() => handleViewResults(project)} style={{ marginRight: 5 }}>View Results</button>
-                <button onClick={() => { setEditingProject(project); setShowModal(true); }} style={{ marginRight: 5 }}>Edit</button>
-                <button onClick={() => handleDeleteProject(project.id)}>Delete</button>
+                <button onClick={() => handleViewResults(project)} style={{ marginRight: 5 }}>Результаты</button>
+                <button onClick={() => { setEditingProject(project); setShowModal(true); }} style={{ marginRight: 5 }}>Изменить</button>
+                <button onClick={() => handleDeleteProject(project.id)}>Удалить</button>
               </div>
             </div>
           </div>
@@ -111,8 +111,8 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout }) => {
 
       {selectedProject && (
         <div style={{ marginTop: 30 }}>
-          <h2>Results for {selectedProject.name}</h2>
-          <button onClick={() => setSelectedProject(null)} style={{ marginBottom: 10 }}>Close</button>
+          <h2>Результаты для {selectedProject.name}</h2>
+          <button onClick={() => setSelectedProject(null)} style={{ marginBottom: 10 }}>Закрыть</button>
           <ResultsTable pages={results} />
         </div>
       )}

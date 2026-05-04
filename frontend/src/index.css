@@ -11,3 +11,21 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Подсветка изменений */
+del {
+  background-color: #ffebee;
+  color: #c62828;
+  text-decoration: line-through;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+ins {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 2px 4px;
+  border-radius: 2px;
+}

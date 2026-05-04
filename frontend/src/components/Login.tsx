@@ -17,18 +17,18 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       const data = await login({ username, password });
       onLogin(data);
     } catch {
-      setError('Invalid credentials');
+      setError('Неверные учетные данные');
     }
   };
 
   return (
     <div style={{ maxWidth: 400, margin: '100px auto', padding: 20 }}>
-      <h2>Web Monitor - Login</h2>
+      <h2>Web Monitor - Вход</h2>
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: 10 }}>
           <input
             type="text"
-            placeholder="Username"
+            placeholder="Логин"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             style={{ width: '100%', padding: 8 }}
@@ -37,7 +37,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         <div style={{ marginBottom: 10 }}>
           <input
             type="password"
-            placeholder="Password"
+            placeholder="Пароль"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             style={{ width: '100%', padding: 8 }}
@@ -45,7 +45,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </div>
         {error && <div style={{ color: 'red', marginBottom: 10 }}>{error}</div>}
         <button type="submit" style={{ width: '100%', padding: 10 }}>
-          Login
+          Войти
         </button>
       </form>
     </div>
