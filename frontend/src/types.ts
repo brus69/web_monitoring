@@ -5,6 +5,7 @@ export interface Project {
   track_title: boolean;
   track_desc: boolean;
   track_content: boolean;
+  paused?: boolean;
   interval: number;
   concurrency: number;
   created_at: string;
@@ -33,8 +34,10 @@ export interface PageState {
   content_hash?: string;
   last_checked: string;
   status: string;
+  status_code?: number;
   title?: string;
   description?: string;
+  h1?: string;
   text_content?: string;
   changes?: ChangeRecord[];
 }

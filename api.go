@@ -13,7 +13,8 @@ import (
 )
 
 var jwtKey = []byte("webmon_secret_key")
-var projectStates sync.Map
+var monitorMu sync.Mutex
+var monitorStops = make(map[string]chan struct{})
 
 type Claims struct {
 	Username string `json:"username"`
@@ -104,6 +105,7 @@ func handleCreateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	project.ID = fmt.Sprintf("%d", time.Now().UnixNano())
+	project.Paused = false
 	project.CreatedAt = time.Now()
 	project.UpdatedAt = time.Now()
 
@@ -134,9 +136,14 @@ func handleUpdateProject(w http.ResponseWriter, r *http.Request) {
 	for i, p := range state.Projects {
 		if p.ID == id {
 			project.ID = id
+			project.Paused = p.Paused
 			project.UpdatedAt = time.Now()
 			state.Projects[i] = project
 			SaveProjectState(state)
+			if !project.Paused {
+				stopProjectMonitoring(id)
+				startProjectMonitoring(project)
+			}
 			json.NewEncoder(w).Encode(project)
 			return
 		}
@@ -163,8 +170,61 @@ func handleDeleteProject(w http.ResponseWriter, r *http.Request) {
 	state.Projects = newProjects
 	delete(state.Results, id)
 	SaveProjectState(state)
+	stopProjectMonitoring(id)
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func handleStartProject(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	id := strings.TrimPrefix(r.URL.Path, "/api/projects/")
+	id = strings.TrimSuffix(id, "/start")
+
+	state, _ := LoadProjectState()
+	for i := range state.Projects {
+		if state.Projects[i].ID != id {
+			continue
+		}
+		state.Projects[i].Paused = false
+		state.Projects[i].UpdatedAt = time.Now()
+		project := state.Projects[i]
+		SaveProjectState(state)
+		startProjectMonitoring(project)
+		json.NewEncoder(w).Encode(project)
+		return
+	}
+
+	http.Error(w, "Project not found", http.StatusNotFound)
+}
+
+func handleStopProject(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	id := strings.TrimPrefix(r.URL.Path, "/api/projects/")
+	id = strings.TrimSuffix(id, "/stop")
+
+	state, _ := LoadProjectState()
+	for i := range state.Projects {
+		if state.Projects[i].ID != id {
+			continue
+		}
+		state.Projects[i].Paused = true
+		state.Projects[i].UpdatedAt = time.Now()
+		project := state.Projects[i]
+		SaveProjectState(state)
+		stopProjectMonitoring(id)
+		json.NewEncoder(w).Encode(project)
+		return
+	}
+
+	http.Error(w, "Project not found", http.StatusNotFound)
 }
 
 func handleGetResults(w http.ResponseWriter, r *http.Request) {
@@ -213,15 +273,33 @@ func runProjectCheck(project Project, state *State, concurrency int) {
 	runCheck(project.URLs, state, concurrency)
 }
 
-func startProjectMonitoring(project Project) {
+func startProjectMonitoring(project Project) bool {
+	if project.Paused {
+		return false
+	}
+	monitorMu.Lock()
+	if _, exists := monitorStops[project.ID]; exists {
+		monitorMu.Unlock()
+		return false
+	}
+	stopCh := make(chan struct{})
+	monitorStops[project.ID] = stopCh
+	monitorMu.Unlock()
+
 	go func() {
+		defer func() {
+			monitorMu.Lock()
+			delete(monitorStops, project.ID)
+			monitorMu.Unlock()
+		}()
+
 		interval := time.Duration(project.Interval) * time.Minute
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
 		for {
-			state, _ := LoadProjectState()
-			results := state.Results[project.ID]
+			loadedState, _ := LoadProjectState()
+			results := loadedState.Results[project.ID]
 			if results == nil {
 				results = &State{Pages: []PageState{}}
 			}
@@ -230,17 +308,42 @@ func startProjectMonitoring(project Project) {
 				concurrency = 10 // default
 			}
 			runProjectCheck(project, results, concurrency)
-			state.Results[project.ID] = results
-			SaveProjectState(state)
-			<-ticker.C
+			// Важно: сохраняем результаты в "свежем" state, чтобы не перетирать
+			// изменения по проектам (например, paused=true после остановки).
+			latestState, _ := LoadProjectState()
+			latestState.Results[project.ID] = results
+			SaveProjectState(latestState)
+			select {
+			case <-ticker.C:
+			case <-stopCh:
+				return
+			}
 		}
 	}()
+
+	return true
+}
+
+func stopProjectMonitoring(projectID string) bool {
+	monitorMu.Lock()
+	stopCh, exists := monitorStops[projectID]
+	if exists {
+		delete(monitorStops, projectID)
+	}
+	monitorMu.Unlock()
+
+	if exists {
+		close(stopCh)
+	}
+	return exists
 }
 
 func startAPIServer() {
 	state, _ := LoadProjectState()
 	for _, project := range state.Projects {
-		startProjectMonitoring(project)
+		if !project.Paused {
+			startProjectMonitoring(project)
+		}
 	}
 
 	http.HandleFunc("/api/login", handleLogin)
@@ -250,6 +353,10 @@ func startAPIServer() {
 	http.HandleFunc("/api/projects/", authMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, "/results") {
 			handleGetResults(w, r)
+		} else if strings.HasSuffix(r.URL.Path, "/start") {
+			handleStartProject(w, r)
+		} else if strings.HasSuffix(r.URL.Path, "/stop") {
+			handleStopProject(w, r)
 		} else {
 			switch r.Method {
 			case http.MethodPut:
@@ -262,7 +369,7 @@ func startAPIServer() {
 		}
 	}))
 
-	fs := http.FileServer(http.Dir("/home/andrey/Dev/web_monitoring/frontend/build"))
+	fs := http.FileServer(http.Dir("frontend/build"))
 	http.Handle("/", fs)
 
 	log.Println("Server starting on :8080")

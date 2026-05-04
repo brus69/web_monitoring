@@ -1,6 +1,7 @@
 import { Project, LoginRequest, LoginResponse, State } from './types';
 
-const API_URL = 'http://localhost:8080/api';
+// Dev: CRA proxies /api → backend (package.json "proxy"). Prod: same origin when Go serves frontend/build.
+const API_URL = '/api';
 
 export const login = async (credentials: LoginRequest): Promise<LoginResponse> => {
   const response = await fetch(`${API_URL}/login`, {
@@ -57,6 +58,26 @@ export const deleteProject = async (token: string, id: string): Promise<void> =>
   });
 
   if (!response.ok) throw new Error('Failed to delete project');
+};
+
+export const startProject = async (token: string, id: string): Promise<Project> => {
+  const response = await fetch(`${API_URL}/projects/${id}/start`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) throw new Error('Failed to start project');
+  return response.json();
+};
+
+export const stopProject = async (token: string, id: string): Promise<Project> => {
+  const response = await fetch(`${API_URL}/projects/${id}/stop`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) throw new Error('Failed to stop project');
+  return response.json();
 };
 
 export const getResults = async (token: string, projectId: string): Promise<State> => {

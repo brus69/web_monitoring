@@ -7,15 +7,17 @@ type PageState struct {
 	ContentHash string         `json:"content_hash,omitempty"`
 	LastChecked time.Time      `json:"last_checked"`
 	Status      string         `json:"status"`
+	StatusCode  int            `json:"status_code"`
 	Title       string         `json:"title,omitempty"`
 	Description string         `json:"description,omitempty"`
+	H1          string         `json:"h1,omitempty"`
 	TextContent string         `json:"text_content,omitempty"`
 	Changes     []ChangeRecord `json:"changes,omitempty"`
 }
 
 type ChangeRecord struct {
 	Timestamp time.Time `json:"timestamp"`
-	Field     string    `json:"field"` // "title", "description", "text"
+	Field     string    `json:"field"` // "title", "description", "h1", "text"
 	OldValue  string    `json:"old_value"`
 	NewValue  string    `json:"new_value"`
 	Diff      string    `json:"diff"` // HTML-форматированный дифф
@@ -32,6 +34,7 @@ type Project struct {
 	TrackTitle   bool      `json:"track_title"`
 	TrackDesc    bool      `json:"track_desc"`
 	TrackContent bool      `json:"track_content"`
+	Paused       bool      `json:"paused"`      // true = мониторинг остановлен
 	Interval     int       `json:"interval"`    // в минутах
 	Concurrency  int       `json:"concurrency"` // максимум потоков
 	CreatedAt    time.Time `json:"created_at"`
